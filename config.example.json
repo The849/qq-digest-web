@@ -1,0 +1,14 @@
+{
+  "deepseekKey": "",
+  "deepseekModel": "deepseek-chat",
+  "deepseekEndpoint": "https://api.deepseek.com/chat/completions",
+  "groups": [],
+  "summarizeIntervalMinutes": 360,
+  "emailEnabled": false,
+  "smtpHost": "",
+  "smtpPort": 465,
+  "smtpUser": "",
+  "smtpPass": "",
+  "mailTo": "",
+  "dataDir": "D:/qq-digest-data"
+}

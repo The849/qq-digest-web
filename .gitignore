@@ -1,0 +1,17 @@
+# 配置文件（含 API Key 等敏感信息，切勿提交）
+config.json
+
+# 数据目录与消息数据库（含真实群聊消息）
+data/
+*.db
+*.db-wal
+*.db-shm
+reports/
+
+# 依赖与日志
+node_modules/
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db

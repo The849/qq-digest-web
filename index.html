@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QQ 群聊日报助手</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #1a1d21;
+    --muted: #6b7280;
+    --border: #e6e8eb;
+    --primary: #2f6bff;
+    --primary-hover: #1e56e0;
+    --green: #16a34a;
+    --red: #dc2626;
+    --amber: #d97706;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 28px 16px 80px; }
+  header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  header h1 { font-size: 21px; margin: 0; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 12px; background: #fff; border: 1px solid var(--border); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot.on { background: var(--green); }
+  .dot.off { background: #cbd5e1; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 14px; }
+  .card h2 { font-size: 15px; margin: 0 0 4px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card .desc { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  .step { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 12px; flex: 0 0 auto; }
+  .row { margin-bottom: 14px; }
+  .row:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input[type=text], input[type=password], input[type=number], textarea, select {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: inherit; background: #fff; color: var(--text);
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary); }
+  textarea { resize: vertical; min-height: 52px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+  .keyrow { display: flex; gap: 8px; }
+  .keyrow input { flex: 1; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; padding: 9px 18px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; background: var(--primary); color: #fff; white-space: nowrap; }
+  .btn:hover { background: var(--primary-hover); }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn.ghost { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn.ghost:hover { background: #f3f4f6; }
+  .btn.small { padding: 7px 14px; font-size: 13px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+  .msg { font-size: 13px; margin-left: 10px; }
+  .msg.ok { color: var(--green); }
+  .msg.err { color: var(--red); }
+  .switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .switch input { width: 20px; height: 20px; accent-color: var(--primary); }
+  .mono { font-family: "SF Mono", Consolas, "Courier New", monospace; font-size: 12px; background: #f3f4f6; border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; word-break: break-all; }
+  ol.steps { margin: 0; padding-left: 20px; }
+  ol.steps li { margin-bottom: 6px; }
+  .status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 640px) { .status-grid { grid-template-columns: 1fr 1fr; } }
+  .stat { background: #f9fafb; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .stat .k { font-size: 12px; color: var(--muted); }
+  .stat .v { font-size: 17px; font-weight: 600; margin-top: 2px; }
+  .hl { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: #fff; }
+  .hl .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 6px; margin-right: 8px; font-weight: 500; }
+  .hl .tag.imp { background: #eef4ff; color: var(--primary); }
+  .hl .tag.todo { background: #fef3e2; color: var(--amber); }
+  .hl .content { margin-top: 4px; }
+  .hl .meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .hl .deadline { color: var(--red); font-weight: 500; }
+  .empty { color: var(--muted); text-align: center; padding: 28px 0; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>QQ 群聊日报助手</h1>
+      <div class="sub">自动提炼群聊重点与待办，只保留有用信息</div>
+    </div>
+    <div class="pill"><span class="dot off" id="headDot"></span><span id="headConn">未连接</span></div>
+  </header>
+
+  <div class="card">
+    <h2><span class="step">1</span> 接入 DeepSeek</h2>
+    <p class="desc">用 DeepSeek 智能提炼重点；不填也能用（退化为本地关键词规则）</p>
+    <div class="row">
+      <label>API Key</label>
+      <div class="keyrow">
+        <input type="password" id="keyInput" placeholder="sk-...">
+        <button class="btn ghost" id="toggleKey" type="button">显示</button>
+      </div>
+      <div class="hint">在 platform.deepseek.com 创建，留空 = 使用本地规则</div>
+    </div>
+    <div class="row">
+      <label>模型</label>
+      <select id="modelSelect">
+        <option value="deepseek-chat">deepseek-chat（推荐）</option>
+        <option value="deepseek-reasoner">deepseek-reasoner</option>
+      </select>
+    </div>
+    <div class="row">
+      <button class="btn ghost small" id="testBtn" type="button">测试连接</button>
+      <span class="msg" id="testMsg"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">2</span> 选择监控群（可选）</h2>
+    <p class="desc">留空 = 监控所有群</p>
+    <div class="row">
+      <textarea id="groupsInput" placeholder="只监控指定群则每行或逗号填一个群号，如 123456789"></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">3</span> 总结频率与数据存储</h2>
+    <p class="desc">每隔一段时间自动提炼一次重点，提炼后清空源消息，只保留结果</p>
+    <div class="grid2">
+      <div class="row">
+        <label>总结频率</label>
+        <select id="freqSelect">
+          <option value="30">每 30 分钟</option>
+          <option value="60">每 1 小时</option>
+          <option value="120">每 2 小时</option>
+          <option value="180">每 3 小时</option>
+          <option value="360" selected>每 6 小时</option>
+          <option value="720">每 12 小时</option>
+          <option value="1440">每天一次</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>数据存储位置</label>
+        <input type="text" id="dataDirInput" placeholder="D:/qq-digest-data">
+        <div class="hint">默认存 D 盘；修改后需重启生效</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">4</span> 邮件推送（可选）</h2>
+    <p class="desc">每次提炼出新重点后，自动发邮件到你的邮箱</p>
+    <div class="row switch">
+      <label style="margin:0">启用邮件推送</label>
+      <input type="checkbox" id="emailCheck">
+    </div>
+    <div id="emailBox" style="display:none">
+      <div class="row">
+        <label>邮箱服务商</label>
+        <select id="provSelect">
+          <option value="">自定义</option>
+          <option value="qq">QQ 邮箱</option>
+          <option value="163">163 邮箱</option>
+          <option value="126">126 邮箱</option>
+          <option value="gmail">Gmail</option>
+          <option value="outlook">Outlook</option>
+        </select>
+        <div class="hint">选择后自动填好服务器与端口</div>
+      </div>
+      <div class="grid2">
+        <div class="row">
+          <label>SMTP 服务器</label>
+          <input type="text" id="smtpHost" placeholder="smtp.qq.com">
+        </div>
+        <div class="row">
+          <label>端口</label>
+          <input type="number" id="smtpPort" placeholder="465">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="row">
+          <label>发件邮箱</label>
+          <input type="text" id="smtpUser" placeholder="you@qq.com">
+        </div>
+        <div class="row">
+          <label>授权码 / 密码</label>
+          <input type="password" id="smtpPass" placeholder="QQ 邮箱用「授权码」">
+        </div>
+      </div>
+      <div class="row">
+        <label>收件邮箱</label>
+        <input type="text" id="mailTo" placeholder="receive@example.com">
+      </div>
+      <div class="row">
+        <button class="btn ghost small" id="emailTestBtn" type="button">发送测试邮件</button>
+        <span class="msg" id="emailTestMsg"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">5</span> 接入 QQ（需要 NapCat）</h2>
+    <p class="desc">QQ 官方不开放个人群消息接口，需用 NapCat 挂载（有账号风险，建议小号）</p>
+    <ol class="steps">
+      <li>下载安装 NapCat 并登录 QQ 小号（napcat.napneko.icu）</li>
+      <li>NapCat「网络配置」里新增 HTTP 上报，地址：<span class="mono" id="onebotUrl">http://127.0.0.1:8090/onebot</span></li>
+      <li>保存后上方状态变为「已连接」</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>运行状态</h2>
+    <div class="status-grid">
+      <div class="stat"><div class="k">缓冲消息</div><div class="v" id="statBuffered">0</div></div>
+      <div class="stat"><div class="k">已提炼重点</div><div class="v" id="statHighlights">0</div></div>
+      <div class="stat"><div class="k">上次总结</div><div class="v" id="statLast" style="font-size:14px">—</div></div>
+      <div class="stat"><div class="k">下次总结</div><div class="v" id="statNext" style="font-size:14px">—</div></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="sumBtn" type="button">立即总结</button>
+      <span class="msg" id="sumMsg"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-head">
+      <h2 style="margin:0">重点与待办</h2>
+      <button class="btn ghost small" id="clearBtn" type="button">清空</button>
+    </div>
+    <div id="hlList"><div class="empty">暂无内容，点「立即总结」提炼重点。</div></div>
+  </div>
+
+  <div class="card">
+    <h2>保存设置</h2>
+    <button class="btn" id="saveBtn" type="button">保存全部设置</button>
+    <span class="msg" id="saveMsg"></span>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function setMsg(id, text, cls) { var el = $(id); el.textContent = text; el.className = 'msg ' + (cls || ''); }
+
+  var PROVIDERS = {
+    qq: { host: 'smtp.qq.com', port: 465 },
+    '163': { host: 'smtp.163.com', port: 465 },
+    '126': { host: 'smtp.126.com', port: 465 },
+    gmail: { host: 'smtp.gmail.com', port: 587 },
+    outlook: { host: 'smtp.office365.com', port: 587 }
+  };
+
+  function loadConfig() {
+    fetch('/api/config').then(function (r) { return r.json(); }).then(function (c) {
+      if (c.hasKey) $('keyInput').placeholder = c.maskedKey + '（已保存，留空不修改）';
+      $('modelSelect').value = c.deepseekModel || 'deepseek-chat';
+      $('groupsInput').value = (c.groups || []).join(', ');
+      var f = String(c.summarizeIntervalMinutes || 360);
+      $('freqSelect').value = f;
+      $('dataDirInput').value = c.dataDir || 'D:/qq-digest-data';
+      $('emailCheck').checked = !!c.emailEnabled;
+      $('smtpHost').value = c.smtpHost || '';
+      $('smtpPort').value = c.smtpPort || '';
+      $('smtpUser').value = c.smtpUser || '';
+      if (c.hasMailPass) $('smtpPass').placeholder = '****（已保存，留空不修改）';
+      $('mailTo').value = c.mailTo || '';
+      $('emailBox').style.display = c.emailEnabled ? 'block' : 'none';
+    }).catch(function () {});
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return '—';
+    var d = new Date(ts);
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function fmtDur(ms) {
+    if (ms <= 0) return '待触发';
+    var m = Math.round(ms / 60000);
+    if (m < 60) return m + ' 分钟后';
+    var h = Math.floor(m / 60), mm = m % 60;
+    return h + ' 小时 ' + mm + ' 分后';
+  }
+
+  function loadStatus() {
+    fetch('/api/status').then(function (r) { return r.json(); }).then(function (s) {
+      var on = s.napcatConnected;
+      $('headDot').className = 'dot ' + (on ? 'on' : 'off');
+      $('headConn').textContent = on ? '已连接' : '未连接';
+      $('statBuffered').textContent = s.bufferedCount;
+      $('statHighlights').textContent = s.highlightCount;
+      $('statLast').textContent = s.lastSummarizeTs ? fmtTime(s.lastSummarizeTs * 1000) : '—';
+      $('statNext').textContent = s.bufferedCount > 0 ? fmtDur(s.nextSummarizeAt - Date.now()) : '—';
+      $('onebotUrl').textContent = s.onebotUrl;
+    }).catch(function () {});
+  }
+
+  function loadHighlights() {
+    fetch('/api/highlights').then(function (r) { return r.json(); }).then(function (arr) {
+      var box = $('hlList');
+      if (!arr || !arr.length) { box.innerHTML = '<div class="empty">暂无内容，点「立即总结」提炼重点。</div>'; return; }
+      var imp = arr.filter(function (x) { return x.type === '重要'; });
+      var todo = arr.filter(function (x) { return x.type === '待办'; });
+      var html = '';
+      function render(title, items, cls) {
+        if (!items.length) return;
+        html += '<div style="font-size:13px;color:var(--muted);margin:8px 0 6px;font-weight:600">' + title + '（' + items.length + '）</div>';
+        items.forEach(function (it) {
+          html += '<div class="hl"><span class="tag ' + cls + '">' + esc(it.type) + '</span>';
+          if (it.group) html += '<span style="font-size:12px;color:var(--muted)">' + esc(it.group) + '</span>';
+          html += '<div class="content">' + esc(it.content) + '</div>';
+          html += '<div class="meta">' + esc(it.time);
+          if (it.deadline) html += ' · 截止 <span class="deadline">' + esc(it.deadline) + '</span>';
+          html += '</div></div>';
+        });
+      }
+      render('重要信息', imp, 'imp');
+      render('待办事项', todo, 'todo');
+      box.innerHTML = html;
+    }).catch(function () {});
+  }
+
+  $('toggleKey').onclick = function () {
+    var inp = $('keyInput'); var pwd = inp.type === 'password';
+    inp.type = pwd ? 'text' : 'password'; $('toggleKey').textContent = pwd ? '隐藏' : '显示';
+  };
+  $('emailCheck').onchange = function () { $('emailBox').style.display = $('emailCheck').checked ? 'block' : 'none'; };
+  $('provSelect').onchange = function () {
+    var p = PROVIDERS[$('provSelect').value];
+    if (p) { $('smtpHost').value = p.host; $('smtpPort').value = p.port; }
+  };
+
+  $('testBtn').onclick = function () {
+    setMsg('testMsg', '测试中…', ''); $('testBtn').disabled = true;
+    fetch('/api/test-deepseek', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deepseekKey: $('keyInput').value.trim() }) })
+      .then(function (r) { return r.json(); })
+      .then(function (res) { setMsg('testMsg', res.ok ? '连接成功，耗时 ' + res.latencyMs + ' ms' : '失败：' + (res.error || ''), res.ok ? 'ok' : 'err'); })
+      .catch(function (e) { setMsg('testMsg', '请求异常：' + e.message, 'err'); })
+      .finally(function () { $('testBtn').disabled = false; });
+  };
+
+  $('emailTestBtn').onclick = function () {
+    setMsg('emailTestMsg', '发送中…', ''); $('emailTestBtn').disabled = true;
+    var payload = {
+      smtpHost: $('smtpHost').value.trim(), smtpPort: $('smtpPort').value,
+      smtpUser: $('smtpUser').value.trim(), smtpPass: $('smtpPass').value, mailTo: $('mailTo').value.trim()
+    };
+    fetch('/api/test-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.json(); })
+      .then(function (res) { setMsg('emailTestMsg', res.ok ? '发送成功' : '失败：' + (res.error || ''), res.ok ? 'ok' : 'err'); })
+      .catch(function (e) { setMsg('emailTestMsg', '请求异常：' + e.message, 'err'); })
+      .finally(function () { $('emailTestBtn').disabled = false; });
+  };
+
+  $('saveBtn').onclick = function () {
+    setMsg('saveMsg', '保存中…', '');
+    var groups = $('groupsInput').value.split(/[,，\n]/).map(function (s) { return s.trim(); }).filter(Boolean);
+    var payload = {
+      deepseekKey: $('keyInput').value.trim(),
+      deepseekModel: $('modelSelect').value,
+      groups: groups,
+      summarizeIntervalMinutes: parseInt($('freqSelect').value, 10) || 360,
+      emailEnabled: $('emailCheck').checked,
+      smtpHost: $('smtpHost').value.trim(),
+      smtpPort: parseInt($('smtpPort').value, 10) || 465,
+      smtpUser: $('smtpUser').value.trim(),
+      smtpPass: $('smtpPass').value,
+      mailTo: $('mailTo').value.trim(),
+      dataDir: $('dataDirInput').value.trim()
+    };
+    fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res.ok) {
+          setMsg('saveMsg', res.dataDirChanged ? '已保存；存储位置已变，重启后生效' : '已保存', 'ok');
+          if ($('keyInput').value) { $('keyInput').value = ''; $('keyInput').type = 'password'; $('toggleKey').textContent = '显示'; }
+          if ($('smtpPass').value) $('smtpPass').value = '';
+          loadConfig(); loadStatus();
+        } else { setMsg('saveMsg', '保存失败：' + (res.error || ''), 'err'); }
+      })
+      .catch(function (e) { setMsg('saveMsg', '请求异常：' + e.message, 'err'); });
+  };
+
+  $('sumBtn').onclick = function () {
+    setMsg('sumMsg', '正在提炼（调用 DeepSeek 可能需要几秒到几十秒）…', ''); $('sumBtn').disabled = true;
+    fetch('/api/summarize', { method: 'POST' })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res.ok) setMsg('sumMsg', '已提炼 ' + res.count + ' 条重点' + (res.emailed ? '，已发邮件' : ''), 'ok');
+        else setMsg('sumMsg', res.error || '失败', 'err');
+        loadHighlights(); loadStatus();
+      })
+      .catch(function (e) { setMsg('sumMsg', '请求异常：' + e.message, 'err'); })
+      .finally(function () { $('sumBtn').disabled = false; });
+  };
+
+  $('clearBtn').onclick = function () {
+    if (!confirm('确定清空所有已提炼的重点与待办？')) return;
+    fetch('/api/highlights/clear', { method: 'POST' }).then(function () { loadHighlights(); loadStatus(); });
+  };
+
+  loadConfig();
+  loadStatus();
+  loadHighlights();
+  setInterval(loadStatus, 15000);
+})();
+</script>
+</body>
+</html>
